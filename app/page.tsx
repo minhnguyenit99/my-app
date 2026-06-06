@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { StoryCard } from "@/app/components/StoryCard";
 import { getTopStories } from "@/lib/queries";
 

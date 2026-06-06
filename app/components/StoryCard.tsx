@@ -5,10 +5,11 @@ export async function StoryCard({ story }: { story: Story }) {
     if (!story || !story.title) {
         return <div>No story data available.</div>;
     }
+    console.log(`${story.imageUrl} - ${story.title}`);
     return (
         <Link href={`/story/${story.id}`}>
         <article className="border border-gray-200 p-4 rounded-xl shadow-sm flex flex-col sm:flex-row gap-5 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-gray-500">
-          {story.imageUrl ? (
+          {story.imageUrl && story.imageUrl.startsWith('https') ? (
             <img
               src={story.imageUrl}
               alt={story.title}
