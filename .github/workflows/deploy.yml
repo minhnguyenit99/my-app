@@ -1,0 +1,66 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main 
+
+jobs:
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
+
+  deploy:
+    name: Deploy to GCP
+    needs: test 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.GCP_HOST }}
+          username: ${{ secrets.GCP_USERNAME }}
+          key: ${{ secrets.GCP_SSH_KEY }}
+          script: |
+            # Navigate to the app folder
+            cd ~/my-app
+            
+            # 1. Save the current working commit ID
+            PREVIOUS_COMMIT=$(git rev-parse HEAD)
+            
+            # 2. Pull code, build, and restart
+            git pull origin main
+            npm ci
+            npm run build
+            pm2 reload ecosystem.config.js
+            
+            # 3. Wait 10 seconds for the Next.js app to fully start
+            sleep 10
+            
+            # 4. Health Check: Try to fetch the homepage silently
+            if curl -sSf http://localhost:3000 > /dev/null; then
+              echo "Health check passed. Deployment successful."
+            else
+              echo "Health check failed! App crashed. Rolling back..."
+              
+              # Revert to the previous working commit
+              git reset --hard $PREVIOUS_COMMIT
+              
+              # Clean install and rebuild the old working code
+              npm ci
+              npm run build
+              
+              # Restart PM2 with the working code
+              pm2 reload ecosystem.config.js
+              
+              echo "Rollback complete. Server is safe."
+              exit 1 # Tell GitHub Actions the pipeline failed
+            fi
