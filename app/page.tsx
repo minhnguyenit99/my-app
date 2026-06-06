@@ -3,8 +3,9 @@ import { StoryCard } from "@/app/components/StoryCard";
 import { getTopStories } from "@/lib/queries";
 
 export default async function Home() {
+  console.log("PING! The page was requested!");
   const stories = await getTopStories();
-  console.log(stories.length);
+  console.log("The database returned: ", stories.length);
   return (
     <main className="max-w-4xl mx-auto p-4 sm:p-8 min-h-screen">
       <header className="mb-10">
